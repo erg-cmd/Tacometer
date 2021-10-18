@@ -1,0 +1,11 @@
+".\obj\main.obj",
+".\obj\inicializacion.obj",
+".\obj\isr.obj",
+".\obj\mdt.obj",
+".\obj\firm_lcd.obj",
+".\obj\barrido_teclado.obj",
+".\obj\buffer.obj",
+".\obj\firm_calib.obj" 
+TO ".\obj\Tacometro" 
+PRINT(".\lst\Tacometro.m51") RAMSIZE(256) 
+CODE(0x0100 - 0xef00) 

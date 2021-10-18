@@ -1,0 +1,108 @@
+C51 COMPILER V9.03   INICIALIZACION                                                        12/07/2014 19:07:43 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE INICIALIZACION
+OBJECT MODULE PLACED IN .\obj\inicializacion.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.exe src\inicializacion.c LARGE ROM(COMPACT) OPTIMIZE(9,SIZE) BROWSE INCDIR(.\in
+                    -c) DEBUG OBJECTEXTEND PRINT(.\lst\inicializacion.lst) OBJECT(.\obj\inicializacion.obj)
+
+line level    source
+
+   1          /**
+   2           * @file                :Inicializacion.c
+   3           * @brief               :
+   4           *      
+   5           * @version     : 1.0
+   6           * @date        : 24/11/2014
+   7           * @author      : by_Ra!
+   8          ===============================================================================
+   9          */
+  10          #include <C8051F020.H>
+  11          #include "inicializacion.h"
+  12          
+  13          /*--------------------------Variables Especiales--------------------*/
+  14          sfr16 T0 = 0x8A;
+  15          sfr16 T2 = 0xCC;
+  16          sfr16 RCAP2 = 0xCA;
+  17          
+  18          /*********************************************************************
+  19           * @fn void Inicializacion ()
+  20           * @brief       Seteo de WDT, OSCX, PUERTOS e INTERRUP
+  21           * @param[in]   void    
+  22           * @return      void
+  23           * Note: Al timer0 lo utilizamos como base de tiempo de 1ms
+  24           **********************************************************************/
+  25          void Inicializacion()
+  26          {
+  27   1              unsigned int i; //!< variable para retardo
+  28   1      
+  29   1              //-------SETEO WDT-----------------------
+  30   1              WDTCN = 0xDE;   // Deshabilito el watchdog timer
+  31   1              WDTCN = 0xAD;   // por ahora........
+  32   1              //--------FIN WDT       ------------------------
+  33   1      
+  34   1              //-------SETEO Oscilador Externo-----------------------
+  35   1              OSCXCN = 0x67;                                  // Configuro el registro de control del oscilador 
+  36   1                                                                              // 01100111
+  37   1                                                                              // Habilito el oscilador para funcionar con cristal (22.1184MHz)
+  38   1                                                                              // Configuro el rango de trabajo del oscilador
+  39   1              for (i=0; i < 256; i++);                // Demora "Cuidado esta demora (bloqueante) se puede hacer porque 
+  40   1                                                                              // estoy en la inicializacion y no bloqueo ningun otro proceso!!!!
+  41   1                                                                              // Hay que hacer esta demora para que se estabilice el oscilador
+  42   1              while (!(OSCXCN & 0x80));               // Espero hasta que se estabilice (Cuidado es bloqueante!!)
+  43   1              OSCICN = 0x88;                                  // Configuro el oscilador interno
+  44   1                                                                              // 10001000
+  45   1                                                                              // Configuro el micro para utilizar el oscilador externo
+  46   1              while (!(OSCXCN & 0x80));               // Espero hasta que se estabilice (Cuidado es bloqueante!!)
+  47   1              OSCICN = 0x08;                                  // Configuro el oscilador interno
+  48   1                                                                              // 00001000
+  49   1                                                                              // Configuro el micro para utilizar el oscilador externo
+  50   1              //-------FIN Oscilador Externo-----------------------   
+  51   1      
+  52   1              //-------SETEO PUERTOS-----------------------   
+  53   1              //Seteo para pulsadores (0 = Open-Drain \ 1 = Push-Pull)
+  54   1              P74OUT = 0xFB;                                  // 1111 1011
+C51 COMPILER V9.03   INICIALIZACION                                                        12/07/2014 19:07:43 PAGE 2   
+
+  55   1      //      P1MDOUT = 0x99;                                 //Para mi teclado Rustico
+  56   1              P1MDOUT = 0xB8;                                 // 1011 1000 Configuro los Puertos del teclado
+  57   1              P2MDOUT = 0xFF;                                 //Pueto LCD
+  58   1              XBR0 = 0x04;                                    // Ruteo pins P0.0 y P0.1 a la uart0
+  59   1              XBR1 = 0x10;                                    // ruteo /INT1 a un pin
+  60   1              XBR2 = 0x44;                                    // Ruteo pins P0.2 y P0.3 a la uart1, 
+  61   1                                                                              // Habilito la crossbar y habilito lo pull ups
+  62   1              //-------FIN    PUERTOS-----------------------  
+  63   1      
+  64   1              //-------SETEO TIMER-----------------------
+  65   1                      //El T2 se encuentra en modo recarga y 16 bits
+  66   1              CKCON |= 0x20;                                  // T2 tiene la frec del sistema 
+  67   1              TMOD = 0x91;                                    //Timer 0 en modo 16 bits
+  68   1              TL0 = T0_DESBORDE_L;                            //desborda cada 100us
+  69   1              TH0 = T0_DESBORDE_H;                            //desborda cada 100us
+  70   1              T2 = T2_RELOAD;
+  71   1              RCAP2 = T2_RELOAD;                              //idem
+  72   1              //-------FIN    TIMER-----------------------    
+  73   1       
+  74   1              //-------SETEO INTERRUP-----------------------  
+  75   1              TF0 = RESET;                                    //borro el flag de desborde timer 0
+  76   1              ET0 = SET;                                              //habilito la interrupcion por desborde timer 0
+  77   1              IT1 = SET;                                              //Seteo deteccion por flanco descendete /INT1
+  78   1              EA  = SET;                                      //habilito la interrupcion global
+  79   1              //-------FIN    INTERRUP----------------------- 
+  80   1      }
+  81          
+  82          /* --------------------------------- End Of File ------------------------------ */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     92    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

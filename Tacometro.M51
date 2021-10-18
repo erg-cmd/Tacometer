@@ -1,0 +1,174 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        05/05/2014  05:35:14  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL\C51\BIN\BL51.EXE Inicializacion.obj, main.obj TO Tacometro RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  Inicializacion.obj (INICIALIZACION)
+  main.obj (MAIN)
+  C:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+  C:\KEIL\C51\LIB\C51S.LIB (?C_INIT)
+
+
+LINK MAP OF MODULE:  Tacometro (INICIALIZACION)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0006H     UNIT         _DATA_GROUP_
+            DATA    000EH     0002H     UNIT         ?DT?MAIN
+            IDATA   0010H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0005H     UNIT         ?C_INITSEG
+                    0008H     0003H                  *** GAP ***
+            CODE    000BH     0003H     ABSOLUTE     
+            CODE    000EH     008CH     UNIT         ?C_C51STARTUP
+            CODE    009AH     0049H     UNIT         ?PR?MAIN?MAIN
+            CODE    00E3H     003FH     UNIT         ?PR?INICIALIZACION?INICIALIZACION
+            CODE    0122H     002AH     UNIT         ?PR?ISR_TIMER0?MAIN
+
+
+
+OVERLAY MAP OF MODULE:   Tacometro (INICIALIZACION)
+
+
+SEGMENT                                     DATA_GROUP 
+  +--> CALLED SEGMENT                     START    LENGTH
+---------------------------------------------------------
+?C_C51STARTUP                             -----    -----
+  +--> ?PR?MAIN?MAIN
+  +--> ?C_INITSEG
+
+?PR?MAIN?MAIN                             0008H    0006H
+  +--> ?PR?INICIALIZACION?INICIALIZACION
+
+
+
+SYMBOL TABLE OF MODULE:  Tacometro (INICIALIZACION)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      05/05/2014  05:35:14  PAGE 2
+
+
+  -------         MODULE        INICIALIZACION
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:00FFH         PUBLIC        WDTCN
+  B:00A8H.7       PUBLIC        EA
+  D:00E8H         PUBLIC        ADC0CN
+  D:00A8H         PUBLIC        IE
+  D:00D8H         PUBLIC        PCA0CN
+  D:00B8H         PUBLIC        IP
+  D:00E3H         PUBLIC        XBR2
+  D:00C0H         PUBLIC        SMB0CN
+  D:00F8H         PUBLIC        SPI0CN
+  C:00E3H         PUBLIC        Inicializacion
+  D:00B5H         PUBLIC        P74OUT
+  D:0089H         PUBLIC        TMOD
+  D:0088H         PUBLIC        TCON
+  D:00B2H         PUBLIC        OSCICN
+  B:00A8H.1       PUBLIC        ET0
+  B:0088H.5       PUBLIC        TF0
+  D:008CH         PUBLIC        TH0
+  D:00B1H         PUBLIC        OSCXCN
+  D:008AH         PUBLIC        TL0
+  D:0098H         PUBLIC        SCON0
+  D:00C8H         PUBLIC        T2CON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          INICIALIZACION
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:00E3H         LINE#         22
+  C:00E3H         LINE#         23
+  C:00E3H         LINE#         27
+  C:00E6H         LINE#         28
+  C:00E9H         LINE#         32
+  C:00ECH         LINE#         36
+  C:00FCH         LINE#         39
+  C:0101H         LINE#         40
+  C:0104H         LINE#         43
+  C:0109H         LINE#         44
+  C:010CH         LINE#         51
+  C:010FH         LINE#         52
+  C:0112H         LINE#         58
+  C:0115H         LINE#         59
+  C:0118H         LINE#         60
+  C:011BH         LINE#         64
+  C:011DH         LINE#         65
+  C:011FH         LINE#         66
+  C:0121H         LINE#         68
+  -------         ENDPROC       INICIALIZACION
+  -------         ENDMOD        INICIALIZACION
+
+  -------         MODULE        MAIN
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  C:0122H         PUBLIC        isr_timer0
+  D:0085H         PUBLIC        P5
+  D:0096H         PUBLIC        P7
+  D:00E8H         PUBLIC        ADC0CN
+  D:00A8H         PUBLIC        IE
+BL51 BANKED LINKER/LOCATER V6.22                                                      05/05/2014  05:35:14  PAGE 3
+
+
+  D:00D8H         PUBLIC        PCA0CN
+  D:00B8H         PUBLIC        IP
+  D:00C0H         PUBLIC        SMB0CN
+  C:009AH         PUBLIC        main
+  D:00F8H         PUBLIC        SPI0CN
+  D:0088H         PUBLIC        TCON
+  D:000EH         PUBLIC        mi_tiempo
+  D:008CH         PUBLIC        TH0
+  D:008AH         PUBLIC        TL0
+  B:0088H.4       PUBLIC        TR0
+  D:0098H         PUBLIC        SCON0
+  D:00C8H         PUBLIC        T2CON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          ISR_TIMER0
+  C:0122H         LINE#         24
+  C:0126H         LINE#         26
+  C:012EH         LINE#         27
+  C:013EH         LINE#         28
+  C:0141H         LINE#         29
+  C:0147H         LINE#         30
+  -------         ENDPROC       ISR_TIMER0
+  -------         PROC          MAIN
+  -------         DO            
+  D:0008H         SYMBOL        contador
+  D:000AH         SYMBOL        cuenta_led
+  D:000CH         SYMBOL        vuelta
+  D:000DH         SYMBOL        indice
+  -------         ENDDO         
+  C:009AH         LINE#         40
+  C:009AH         LINE#         41
+  C:009AH         LINE#         42
+  C:00A3H         LINE#         43
+  C:00A7H         LINE#         46
+  C:00AAH         LINE#         47
+  C:00ACH         LINE#         48
+  C:00AFH         LINE#         49
+  C:00B1H         LINE#         51
+  C:00B1H         LINE#         52
+  C:00B1H         LINE#         55
+  C:00C6H         LINE#         56
+  C:00D8H         LINE#         57
+  C:00D8H         LINE#         58
+  C:00DBH         LINE#         59
+  C:00E1H         LINE#         60
+  C:00E1H         LINE#         61
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        MAIN
+
+Program Size: data=17.0 xdata=0 code=329
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

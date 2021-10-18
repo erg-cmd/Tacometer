@@ -1,0 +1,90 @@
+C51 COMPILER V9.50a   MAIN                                                                 05/05/2014 05:35:14 PAGE 1   
+
+
+C51 COMPILER V9.50a, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE src\main.c BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND PRINT(.\main.lst) TABS(2
+                    -) OBJECT(main.obj)
+
+line level    source
+
+   1          /**
+   2           * @file    :main.c
+   3           * @brief   : Se pretende controlar el motor de un Disco duro variando el nibble 
+   4           *  bajo de un puerto varianda desde 0x00 - 0x0F
+   5           * @version : 1.0
+   6           * @date    : 26/04/2013
+   7           * @author  : by_Ra!
+   8          ===============================================================================
+   9          */
+  10          
+  11          #include "main.h"
+  12          #include "inicializacion.h"
+  13          
+  14          /*-----------------------Variables-----------------------------------*/
+  15          volatile U16 mi_tiempo=0;
+  16          
+  17          /*********************************************************************
+  18           * @fn void isr_timer0()
+  19           * @brief rutina de interrupcion para el timer 0. Interrumpe cada 1ms
+  20           * @param[in] void
+  21           * @return  void
+  22           * Note: 
+  23           **********************************************************************/
+  24          void isr_timer0 () interrupt 1 
+  25          {
+  26   1        mi_tiempo++;  
+  27   1        if(mi_tiempo == 0xFFFF) mi_tiempo = 0; //Controlo el desborde
+  28   1        TH0 = t_desborde_h;   
+  29   1        TL0 = t_desborde_l + TL0;
+  30   1      }
+  31          
+  32          
+  33          /*********************************************************************
+  34           * @fn void main()
+  35           * @brief   Correr una secuencia en el puerto 7
+  36           * @param[in] void        
+  37           * @return  void
+  38           * Note: 
+  39           **********************************************************************/
+  40          void main()
+  41          {
+  42   1        volatile U16 contador = 0, cuenta_led = 0;
+  43   1        volatile U8 vuelta = 0, indice = 0;
+  44   1      //  U8 largo = sizeof(pasos), paso=0;
+  45   1        
+  46   1        Inicializacion();//Seteos de Perifericos
+  47   1        TR0 = SET; //Habilito el Timer0
+  48   1        P7 = 0x00;
+  49   1        P5 = 0x00;
+  50   1        //Programa Principal
+  51   1        while(1)
+  52   1        {
+  53   2          
+  54   2          //Parpadeo LED
+C51 COMPILER V9.50a   MAIN                                                                 05/05/2014 05:35:14 PAGE 2   
+
+  55   2          if(mi_tiempo > (cuenta_led + (LED_CORRIENDO/2))) PORT_LED |= LED1|LED2|LED3|LED4;
+  56   2          if(mi_tiempo > (cuenta_led + (LED_CORRIENDO))) 
+  57   2          {
+  58   3            PORT_LED &= ~(LED1|LED2|LED3|LED4);
+  59   3            cuenta_led = mi_tiempo;
+  60   3          } 
+  61   2        } 
+  62   1      }
+  63          
+  64          /* --------------------------------- End Of File ------------------------------ */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    115    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,111 @@
+C51 COMPILER V9.03   ISR                                                                   12/07/2014 19:07:43 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE ISR
+OBJECT MODULE PLACED IN .\obj\isr.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.exe src\isr.c LARGE ROM(COMPACT) OPTIMIZE(9,SIZE) BROWSE INCDIR(.\inc) DEBUG OB
+                    -JECTEXTEND PRINT(.\lst\isr.lst) OBJECT(.\obj\isr.obj)
+
+line level    source
+
+   1          /**
+   2           * @file                : isr.c
+   3           * @brief               :Contiene todas las rutinas ISR
+   4           *      
+   5           * @version     : 1.0
+   6           * @date        : 24/11/2014
+   7           * @author      : by_Ra!
+   8          ===============================================================================
+   9          */
+  10          #include "main.h"
+  11          #include "mdt.h"
+  12          #include "buffer.h"
+  13          
+  14          /*---------------------Variables ------------------------*/
+  15          sfr16 T2 = 0xCC;
+  16          extern bit timer_1ms;
+  17          extern UNS_16 AUX[];
+  18          extern volatile UNS_16 msTicks;                  //definida en main.c
+  19          volatile bit Flag_Contando = OFF;                       //indica si se esta realizando una cuenta
+  20          volatile UNS_16 Res1 = 0;
+  21          /*********************************************************************
+  22           * @fn void isr_timer0()
+  23           * @brief       rutina de interrupcion para el timer 0. Desborda cada 100us
+  24           * @param[in] void
+  25           * @return      void
+  26           * Note: 
+  27           **********************************************************************/
+  28          void isr_timer0 () interrupt 1 
+  29          {
+  30   1              mdt();                                                          // Maquina de Timer
+  31   1              TH0 = T0_DESBORDE_H;
+  32   1              TL0 = T0_DESBORDE_L + TL0;                              // Recargamos el timer
+  33   1              if(timer_1ms == OFF) //Cuenta de ms para el LCD que depende de msTicks
+  34   1              {
+  35   2                      msTicks++;              
+  36   2                      timer_1ms_on;   //recargamos
+  37   2              }
+  38   1      }
+  39          
+  40          /*********************************************************************
+  41           * @fn void isr_ext1()
+  42           * @brief       Indica el momento de guardar la cuenta
+  43           * @param[in] void
+  44           * @return      void
+  45           * Note: -----
+  46           **********************************************************************/
+  47          void isr_ext1 () interrupt 2 
+  48          {
+  49   1              UNS_16 aux;
+  50   1              if(Flag_Contando == OFF)        //!< En la primera IRQ no hay dato
+  51   1              {                           
+  52   2                      Flag_Contando = ON;
+  53   2                      Res1 = 0; ;T2 = T2_RELOAD;
+  54   2                      TF2 = OFF; //Limpio el flag
+C51 COMPILER V9.03   ISR                                                                   12/07/2014 19:07:43 PAGE 2   
+
+  55   2                      ET2 = ON; //Habilito la IRQ del T2
+  56   2              }else                       
+  57   1              {
+  58   2                      aux = T2;
+  59   2                      _BUFFER_Send( Res1, aux );//Guardo la cuenta
+  60   2                      Res1 = 0; T2 = T2_RELOAD;
+  61   2              }
+  62   1      }
+  63          
+  64          /*********************************************************************
+  65           * @fn void isr_timer2()
+  66           * @brief       
+  67           * @param[in] void
+  68           * @return      void
+  69           * Note: 
+  70           **********************************************************************/
+  71          void isr_timer2 () interrupt 5
+  72          {
+  73   1              if(Res1 < 1200)
+  74   1              {
+  75   2                      Res1++;
+  76   2              }else   //restauramos todo los valores. FUERA DE RANGO
+  77   1              {
+  78   2                      ET2 = OFF;      // IRQ T2 OFF
+  79   2                      T2 = T2_RELOAD;         // Reload T2
+  80   2                      Flag_Contando = OFF;
+  81   2              }
+  82   1              TF2 = OFF;
+  83   1      }
+  84          
+  85          /* --------------------------------- End Of File ------------------------------ */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    255    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

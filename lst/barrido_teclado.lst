@@ -1,0 +1,169 @@
+C51 COMPILER V9.03   BARRIDO_TECLADO                                                       12/07/2014 19:07:44 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE BARRIDO_TECLADO
+OBJECT MODULE PLACED IN .\obj\barrido_teclado.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.exe src\barrido_teclado.c LARGE ROM(COMPACT) OPTIMIZE(9,SIZE) BROWSE INCDIR(.\i
+                    -nc) DEBUG OBJECTEXTEND PRINT(.\lst\barrido_teclado.lst) OBJECT(.\obj\barrido_teclado.obj)
+
+line level    source
+
+   1          /**
+   2           * @file                :barrido_teclado.c
+   3           * @brief               : contiene Driver y Firm del Teclado 4x3
+   4           * @version     : 1.2
+   5           * @date        : 24/11/2014
+   6           * @author      : by_Ra!
+   7          ===============================================================================
+   8          */
+   9          #include "barrido_teclado.h"
+  10          #include "main.h"
+  11          #include "mdt.h"
+  12          
+  13          /*-------------------Variables Externas------------------------------*/
+  14          
+  15          extern bit timer_2500us;
+  16          extern UNS_16   AUX[];
+  17          /*-------------------Variables Teclado------------------------------*/
+  18          static UNS_8 tecla = NO_KEY;    //!< buffer de teclado
+  19          
+  20          // Filas del Teclado
+  21          sbit FILA_1 = TECLADO_PORT^TECLADO_FILA1;
+  22          sbit FILA_2 = TECLADO_PORT^TECLADO_FILA2;
+  23          sbit FILA_3 = TECLADO_PORT^TECLADO_FILA3;
+  24          sbit FILA_4 = TECLADO_PORT^TECLADO_FILA4;
+  25          
+  26          // Columnas del Teclado
+  27          sbit COLUM_1 = TECLADO_PORT^TECLADO_COLUM1; 
+  28          sbit COLUM_2 = TECLADO_PORT^TECLADO_COLUM2; 
+  29          sbit COLUM_3 = TECLADO_PORT^TECLADO_COLUM3; 
+  30          /*********************************************************************
+  31           * @fn void ReboteTecla()
+  32           * @brief               Elimina el rebote de la tecla por soft
+  33           * @param[in]   void                            
+  34           * @return      void
+  35           * Note: 
+  36           **********************************************************************/
+  37          void ReboteTecla( void ) {
+  38   1              
+  39   1              static unsigned char CodigoAnterior = NO_KEY ;
+  40   1              static unsigned char EstadosEstables = 0 ;
+  41   1              unsigned char CodigoActual ;
+  42   1            
+  43   1              CodigoActual = LecturaTecla4x3( );                              
+  44   1              
+  45   1              if( CodigoActual == NO_KEY ) {  //!< No se pulso tecla o rebote
+  46   2                      CodigoAnterior = NO_KEY ;
+  47   2                      EstadosEstables = 0 ;
+  48   2                      return ;
+  49   2              }
+  50   1      
+  51   1              if( EstadosEstables == 0 )      {  //!< Primera vez
+  52   2                      CodigoAnterior = CodigoActual ;
+  53   2                      EstadosEstables = 1 ;
+  54   2                      return ;
+C51 COMPILER V9.03   BARRIDO_TECLADO                                                       12/07/2014 19:07:44 PAGE 2   
+
+  55   2              }
+  56   1      
+  57   1              if( EstadosEstables == CANTIDADdErEBOTES )      {       //!< Acepto la tecla
+  58   2                      EstadosEstables = CANTIDADdErEBOTES + 1;        //!< Hará que no vuelva a entrar hasta que suelten la tecla
+  59   2                      tecla = CodigoAnterior ;        
+  60   2                      return ;
+  61   2              }
+  62   1              
+  63   1              if( EstadosEstables > CANTIDADdErEBOTES )               //!< La tecla sigue pulsada
+  64   1                      return ;
+  65   1      
+  66   1              if( CodigoActual == CodigoAnterior )
+  67   1                      EstadosEstables ++ ;
+  68   1              else
+  69   1                      EstadosEstables = 0 ;   
+  70   1              return ;
+  71   1      }
+  72          
+  73          /*********************************************************************
+  74           * @fn unsigned char  LecturaTecla4x3 ( void )
+  75           * @brief               Lectura del codigo de tecla con rebote de un teclado de 4 x 3
+  76           * @param[in]   void                            
+  77           * @return      unsigned char : Tecla ó NO_KEY si no se pulso tecla  
+  78           * Note: 
+  79           **********************************************************************/
+  80          unsigned char  LecturaTecla4x3( void ) 
+  81          {
+  82   1       //Barro Fila 1
+  83   1               
+  84   1               FILA_1 = 0; FILA_2 = 1;FILA_3 = 1;FILA_4 = 1;
+  85   1      
+  86   1                if(!COLUM_1) return  1;
+  87   1                if(!COLUM_2) return  2;
+  88   1                if(!COLUM_3) return  3;
+  89   1      
+  90   1      //Barro Fila 2
+  91   1               FILA_1 = 1; FILA_2 = 0; FILA_3 = 1; FILA_4 = 1;
+  92   1      
+  93   1                if(!COLUM_1) return  4;
+  94   1                if(!COLUM_2) return  5;
+  95   1                if(!COLUM_3) return  6;       
+  96   1      
+  97   1      
+  98   1      //Barro Fila 3
+  99   1               FILA_1 = 1; FILA_2 = 1; FILA_3 = 0; FILA_4 = 1;
+ 100   1      
+ 101   1               if(!COLUM_1) return  7;
+ 102   1               if(!COLUM_2) return  8;
+ 103   1               if(!COLUM_3) return  9;
+ 104   1      
+ 105   1      //Barro Fila 4
+ 106   1               FILA_1 = 1; FILA_2 = 1; FILA_3 = 1; FILA_4 = 0;
+ 107   1      
+ 108   1               if(!COLUM_1) return  10;
+ 109   1               if(!COLUM_2) return  11;
+ 110   1               if(!COLUM_3) return  12;
+ 111   1      
+ 112   1                //Si no se presiono ninguna tecla.
+ 113   1                return NO_KEY;
+ 114   1      }
+ 115          /*********************************************************************
+ 116           * @fn unsigned char  Teclado ( void )
+C51 COMPILER V9.03   BARRIDO_TECLADO                                                       12/07/2014 19:07:44 PAGE 3   
+
+ 117           * @brief               Una vez que se lee la tecla limpia el buffer, es para aislar
+ 118           * el programa de esta variable impidiendo la modificacion directa
+ 119           * @param[in]   void                            
+ 120           * @return      unsigned char : Tecla ó NO_KEY si no se pulso tecla  
+ 121           * Note: 
+ 122           **********************************************************************/
+ 123          unsigned char Teclado ()
+ 124          {
+ 125   1         unsigned char Tecla;
+ 126   1               Tecla = tecla;
+ 127   1               tecla = NO_KEY;
+ 128   1               return Tecla;
+ 129   1      }
+ 130          /*********************************************************************
+ 131           * @fn unsigned char  LecturaTecla4x3 ( void )
+ 132           * @brief               Lee el teclado y vuelve a correr el timer del teclado
+ 133           * @param[in]   void                            
+ 134           * @return      void
+ 135           * Note: 
+ 136           **********************************************************************/
+ 137          void actualizar_teclado ()
+ 138          {
+ 139   1       if(timer_2500us == OFF){ReboteTecla();timer_2500us_on;}// actualiza el valor de tecla cada 2.5ms
+ 140   1      }
+ 141          /* --------------------------------- End Of File ------------------------------ */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    214    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

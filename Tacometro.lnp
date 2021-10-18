@@ -1,0 +1,4 @@
+"Inicializacion.obj",
+"main.obj" 
+TO "Tacometro" 
+RAMSIZE(256) 

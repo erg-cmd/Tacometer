@@ -1,0 +1,391 @@
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\obj\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.exe src\main.c LARGE ROM(COMPACT) OPTIMIZE(9,SIZE) BROWSE INCDIR(.\inc) DEBUG O
+                    -BJECTEXTEND PRINT(.\lst\main.lst) OBJECT(.\obj\main.obj)
+
+line level    source
+
+   1          /**
+   2           * @file :main.c
+   3           * @brief : 
+   4           * @version     : 1.4
+   5           * @date        : 24/11/2014
+   6           * @author      : by_Ra!
+   7           * @note        : Se cambio la manera de presentar los datos en pantalla, ahora 
+   8           * hara el promedio de los datos que tenga y mostrara este promedio in/completo
+   9           * cada 1s
+  10          ========================================================================
+  11          */
+  12          
+  13          #include "main.h"
+  14          #include "inicializacion.h"
+  15          #include "mdt.h"
+  16          #include "buffer.h"
+  17          #include "firm_lcd.h"
+  18          #include "barrido_teclado.h"
+  19          #include "firm_calib.h"
+  20          
+  21          /*-------------------Variables Externas------------------------------*/
+  22          extern bit timer_2500us;
+  23          extern bit timer_1s;
+  24          extern bit timer_2s;
+  25          extern UNS_16 AUX[]; //declarada en mdt.c
+  26          extern _BUFFER bm; //variable del buffer que hace el promedio
+  27          extern UNS_32 memoria[];
+  28          extern bit Flag_Contando; //declarada en isr.c
+  29          /*-----------------------Variables-----------------------------------*/
+  30          const UNS_8 CARACT[] = {'$','1','2','3','4','5','6','7','8','9','*','0','#'};
+  31          const UNS_8 BUFFER_SIZE_0[] = {" N =  2"};
+  32          const UNS_8 BUFFER_SIZE_1[] = {" N =  5"};
+  33          const UNS_8 BUFFER_SIZE_2[] = {" N = 10"};
+  34          const UNS_8 BUFFER_SIZE_3[] = {" N = 50"};
+  35          const UNS_8 BUFFER_SIZE_4[] = {" N =100"};
+  36          const UNS_8 BUFFER_SIZE_5[] = {2,5,10,50,100};
+  37          const UNS_8 *BUFFER_SIZE[] = {BUFFER_SIZE_0,BUFFER_SIZE_1,BUFFER_SIZE_2,BUFFER_SIZE_3,BUFFER_SIZE_4};
+  38          
+  39          
+  40          const UNS_8 Menu_0[] = {"Offset "};
+  41          const UNS_8 Menu_1[] = {"Muestra"};
+  42          const UNS_8 Menu_2[] = {" MAX    "};
+  43          const UNS_8 Menu_3[] = {" MIN    "};
+  44          const UNS_8 Menu_4[] = {" Prom   "};
+  45          const UNS_8 Menu_5[] = {" Salir  "};
+  46          const UNS_8 *Menu_[] = {Menu_0,Menu_1,Menu_2,Menu_3,Menu_4,Menu_5};
+  47          
+  48          const UNS_8 Mens_0[] = {"TACO 14 | RPM"};
+  49          const UNS_8 Mens_1[] = {"  ME-I  |"};
+  50          const UNS_8 Mens_2[] = {"2:v 3:>"};
+  51          const UNS_8 Mens_3[] = {"5:v 6:>"};
+  52          const UNS_8 *Mens_[] = {Mens_0,Mens_1,Mens_2,Mens_3};
+  53          
+  54          volatile UNS_16 msTicks; //Cuenta mili segundos. (firm_LCD)
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 2   
+
+  55          volatile UNS_8 Digito[] = {0,0,0,0,0,'.',0,0};
+  56          volatile bit FLAG_MUESTRA = OFF;
+  57          volatile UNS_32 Offset = 1;
+  58          extern   UNS_16 Res1; //declarada en isr.c
+  59          /*********************************************************************
+  60           * @fn void main()
+  61           * @brief               
+  62           * @param[in]   void 
+  63           * @return      void
+  64           * Note:
+  65           **********************************************************************/
+  66          void main()
+  67          {
+  68   1              volatile  UNS_32 periodo = 0;   //var auxiliar para guardar el PROMEDIO
+  69   1              UNS_8 tecla = NO_KEY, estado = __MEDIR, estado_medir = __MEDIR_READY;
+  70   1              UNS_8 idx = 0;
+  71   1              int delta = 0;  // para guardar la correccion a las rpm
+  72   1              
+  73   1              Inicializacion();       //Seteos de Perifericos
+  74   1              TR0 = SET;                      //Habilito el Timer0
+  75   1              LCD_Init();                     //Incializo el LCD
+  76   1              LCD_WrtCmd(LCD_DISPLAY_CLEAR);  //Borro el LCD, ahora se puede escribir!
+  77   1      
+  78   1              
+  79   1              
+  80   1              //Programa Principal---------------------------------------------
+  81   1              LCD_WrtString(Mens_[0]); //Menu de Operacion
+  82   1              LCD_GoToXY(0,1);
+  83   1              LCD_WrtString(Mens_[1]);
+  84   1              
+  85   1              _BUFFER_Init();         //Limpia los elementos del buffer
+  86   1              _MEMORIA_Init();        //Limpia el buffer de la memoria
+  87   1              while(1) //Programa Principal
+  88   1              {
+  89   2                      switch (estado)
+  90   2                      {
+  91   3                              case __MEDIR:
+  92   3                                              switch(estado_medir)
+  93   3                                              {
+  94   4                                                      case __MEDIR_READY:             //!< Seteo IRQ EXT1
+  95   4                                                                      IE1 = RESET;    // Flag IRQ EXT1
+  96   4                                                                      EX1 = SET;              //Habilito IRQ EXT1
+  97   4                                                                      TR2 = ON; //Habilito el Timer 2
+  98   4                                                                      estado_medir = __MEDIR_RUNNING;
+  99   4                                                      break;
+ 100   4      
+ 101   4                                                      case __MEDIR_RUNNING:   //!< Tacometro midiendo o en condiciones
+ 102   4                                                              
+ 103   4                                                              if(_BUFFER_Nelements() >= bm.BufferSize_N) //cuando se llena el buffer dejamos de tomar muestras
+ 104   4                                                              {
+ 105   5                                                                      estado = __MOSTRAR;     //Saltamos a la siguiente posicion
+ 106   5                                                                      break;
+ 107   5                                                              }
+ 108   4                                                      
+ 109   4                                                              actualizar_teclado(); //!< Sensado de Teclado
+ 110   4                                                              tecla = Teclado();
+ 111   4                                                              if(tecla != NO_KEY) //en caso de que haya una tecla apretada.
+ 112   4                                                              {
+ 113   5                                                                      LCD_GoToXY(0,1);                 //opciones abajo
+ 114   5                                                                      if(FLAG_MUESTRA == OFF)
+ 115   5                                                                      {
+ 116   6                                                                              LCD_WrtString(Mens_[2]); //opciones para moverse
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 3   
+
+ 117   6                                                                      }else
+ 118   5                                                                      {
+ 119   6                                                                              LCD_WrtString(Mens_[3]); //opciones para moverse
+ 120   6                                                                      }
+ 121   5                                                                      firm_menu(CARACT[tecla]);//menu de opciones
+ 122   5                                                              }
+ 123   4                                                              
+ 124   4                                                              if(!timer_1s) //!<Blink
+ 125   4                                                              {
+ 126   5                                                               timer_1s_on;
+ 127   5                                                               P5 = ~P5;
+ 128   5                                                              }
+ 129   4                                                      break;
+ 130   4                                              }
+ 131   3                              break;
+ 132   3                              
+ 133   3                              case __MOSTRAR:                         //!<  Muestra la medicion en LCD
+ 134   3                                      if(!timer_2s)                   //Cada 2 segundos muestra la medicion en pantalla
+ 135   3                                      {
+ 136   4                                              if(idx >= _VALORES_RPM_N)idx = 0;
+ 137   4                                              EA = OFF;                                               //Deshabilito las IRQ Globales
+ 138   4                                              periodo = _BUFFER_RPM();                //Valor promedio
+ 139   4                                              EA = ON;                                                // habilito las IRQ Globales
+ 140   4                                              delta = Ajuste_RPM(periodo/10); // la correcion para el valor de rpm
+ 141   4                                              periodo += delta;                               //corregimos
+ 142   4                                              periodo -= Offset;                              // afectamo por el offset
+ 143   4                                              memoria[idx++] = periodo;               // Guardamos en memoria y postincrementamos 
+ 144   4                                              Separar_Digitos(periodo);
+ 145   4                                              LCD_GoToXY(9,1);                                //
+ 146   4                                              LCD_WrtString(Digito);                  //Escribimos las RPM por pantalla
+ 147   4                                              estado = __MEDIR;
+ 148   4                                              timer_2s_on; // reestablecemos la cuenta
+ 149   4                                      }
+ 150   3                              break;
+ 151   3                      }               
+ 152   2              }
+ 153   1      }
+ 154          
+ 155          /*********************************************************************
+ 156           * @fn void firm_menu()
+ 157           * @brief               A partir de una tecla ingresada se recorre un menu y muestra
+ 158           * por pantalla los datos.
+ 159           * @param[in]   UNS_8 
+ 160           * @return      void
+ 161           * Note: 
+ 162           **********************************************************************/
+ 163          void firm_menu(UNS_8 tecla)
+ 164          {
+ 165   1              static UNS_8 ESTADO_MENU = _MENU_SALIR,idx_buffer_size = 0;
+ 166   1              volatile UNS_8 aux = 0,indice = 0,Digito_OFFSET[]={0,0,0,0,0,'.',0};
+ 167   1                      
+ 168   1              if(tecla ==_TECLA_SIG) //Imprime el menu desplazante
+ 169   1              {
+ 170   2                      ESTADO_MENU++;
+ 171   2                      if(ESTADO_MENU > _MENU_SALIR) ESTADO_MENU = 0; //loopeamos el mensaje
+ 172   2                      LCD_GoToXY(0,0);
+ 173   2                      LCD_WrtString(Menu_[ESTADO_MENU]); 
+ 174   2              }else
+ 175   1              {
+ 176   2                      if(tecla == _TECLA_OK) // confirma la accion en pantalla
+ 177   2                      {
+ 178   3                              switch (ESTADO_MENU)
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 4   
+
+ 179   3                              {
+ 180   4                              case _MENU_OFFSET: //Se toca valor por valor PROVISORIO
+ 181   4                                      LCD_GoToXY(0,1);
+ 182   4                                      while(indice < 7)
+ 183   4                                      {
+ 184   5                                              actualizar_teclado(); //!< Sensado de Teclado
+ 185   5                                              tecla = Teclado();
+ 186   5                                              if(tecla != NO_KEY) //en caso de que haya una tecla apretada.
+ 187   5                                              {
+ 188   6                                                      Digito_OFFSET[indice] = CARACT[tecla]; //Levanto el caracter
+ 189   6                                                      LCD_WrtData(Digito_OFFSET[indice++]); //Escribi el caracter
+ 190   6                                              }
+ 191   5                                              if(indice == 5) {LCD_WrtData(Digito_OFFSET[indice++]);} //Escribo el '.'
+ 192   5                                      }
+ 193   4                                      //Guardamos los valores en Offset
+ 194   4                                      Offset = (100000*(Digito_OFFSET[0] - 48));
+ 195   4                                      Offset = (10000*(Digito_OFFSET[1] - 48));
+ 196   4                                      Offset = (1000*(Digito_OFFSET[2] - 48));
+ 197   4                                      Offset = (100*(Digito_OFFSET[3] - 48));
+ 198   4                                      Offset = (10*(Digito_OFFSET[4] - 48));
+ 199   4                                      Offset = (Digito_OFFSET[6] - 48);
+ 200   4                                      
+ 201   4                                      LCD_GoToXY(0,0);
+ 202   4                                      LCD_WrtString(Mens_[0]);//Volvemos al menu de operacion
+ 203   4                                      LCD_GoToXY(0,1);
+ 204   4                                      LCD_WrtString(Mens_[1]);
+ 205   4                                      
+ 206   4                              break;
+ 207   4                              case _MENU_MUESTRA:             //Variamos las veces a muestrear
+ 208   4                                      FLAG_MUESTRA = ON;
+ 209   4                                      LCD_GoToXY(0,1);                 //opciones abajo
+ 210   4                                      LCD_WrtString(Mens_[3]); //opciones para moverse
+ 211   4                              break; 
+ 212   4                              case _MENU_MAX: //buscamos el valor maximo en el array y lo mostramos
+ 213   4                                      aux = valor_maximo();
+ 214   4                                      Separar_Digitos(memoria[aux]);
+ 215   4                                      LCD_GoToXY(0,1);
+ 216   4                                      LCD_WrtString(Digito); // imprimimos el valor maximo
+ 217   4                              break;
+ 218   4                              case _MENU_MIN: //buscamos el valor minimo en el array y lo mostramos
+ 219   4                                      aux = valor_minimo();
+ 220   4                                      Separar_Digitos(memoria[aux]);
+ 221   4                                      LCD_GoToXY(0,1);
+ 222   4                                      LCD_WrtString(Digito); // imprimimos el valor minimo
+ 223   4                              break;
+ 224   4                              case _MENU_PROM: //promediamos el array y lo mostramos
+ 225   4                                      Separar_Digitos(valor_promedio()); //Decimal = 0
+ 226   4                                      LCD_GoToXY(0,1);
+ 227   4                                      LCD_WrtString(Digito); // imprimimos el valor promedio
+ 228   4                              break;
+ 229   4                              case _MENU_SALIR: //Restauramos el msj de bienvenida
+ 230   4                                      LCD_GoToXY(0,0);
+ 231   4                                      LCD_WrtString(Mens_[0]);
+ 232   4                                      LCD_GoToXY(0,1);
+ 233   4                                      LCD_WrtString(Mens_[1]);
+ 234   4                              break;
+ 235   4                              }
+ 236   3                              ESTADO_MENU = _MENU_SALIR;
+ 237   3                              
+ 238   3                      }else
+ 239   2                      {
+ 240   3                              if(FLAG_MUESTRA)
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 5   
+
+ 241   3                              {
+ 242   4                                      //si es 5, cambia a la siguiente escala
+ 243   4                                      if(tecla == _TECLA_MUESTRAS_SIG) 
+ 244   4                                      {
+ 245   5                                              if(idx_buffer_size >= _OPCIONdeMUESTREO)idx_buffer_size = 0;
+ 246   5                                              LCD_GoToXY(0,0);
+ 247   5                                              LCD_WrtString(BUFFER_SIZE[idx_buffer_size++]);
+ 248   5                                      }else
+ 249   4                                      {
+ 250   5                                              if(tecla == _TECLA_MUESTRAS_OK)//si es 6, confirmamos el valor
+ 251   5                                              {
+ 252   6                                                      bm.BufferSize_N = BUFFER_SIZE_5[idx_buffer_size-1];
+ 253   6                                                      __BUF_RESET(bm.idx);    //reseteamos el indice
+ 254   6                                                      LCD_GoToXY(0,0);
+ 255   6                                                      LCD_WrtString(Mens_[0]);//Volvemos al menu de operacion
+ 256   6                                                      LCD_GoToXY(0,1);
+ 257   6                                                      LCD_WrtString(Mens_[1]);
+ 258   6                                                      idx_buffer_size = 0;
+ 259   6                                                      FLAG_MUESTRA = OFF;
+ 260   6                                              }
+ 261   5                                      }
+ 262   4                              
+ 263   4                              }
+ 264   3                      }
+ 265   2              }
+ 266   1      }
+ 267          
+ 268          /*********************************************************************
+ 269           * @fn void valor_maximo()
+ 270           * @brief               del array memoria devuelve el valor maximo
+ 271           * por pantalla los datos.
+ 272           * @param[in]   void
+ 273           * @return      UNS_16 el maximo
+ 274           * Note: 
+ 275           **********************************************************************/
+ 276          UNS_8 valor_maximo()
+ 277           {
+ 278   1              UNS_8 contador, max_posicion = 0;
+ 279   1              UNS_32 axu = 0;
+ 280   1              for(contador=_VALORES_RPM_N;contador>0;contador--) // Busqueda dentro del array
+ 281   1              {
+ 282   2                      if(memoria[contador-1] > axu)
+ 283   2                      {
+ 284   3                              axu = memoria[contador-1];
+ 285   3                              max_posicion = contador-1; // guardamos la posicion del valor buscado
+ 286   3                      }
+ 287   2              }
+ 288   1              return max_posicion; // posicion de valor maximo
+ 289   1      }
+ 290          
+ 291          /*********************************************************************
+ 292           * @fn void valor_maximo()
+ 293           * @brief               del array memoria devuelve el valor maximo
+ 294           * por pantalla los datos.
+ 295           * @param[in]   void
+ 296           * @return      UNS_16 el minimo
+ 297           * Note: 
+ 298           **********************************************************************/
+ 299           UNS_8 valor_minimo()
+ 300           {
+ 301   1              UNS_8 contador, min_posicion = 0;
+ 302   1              UNS_32 axu = 20000; //porque es el peor caso siendo máximo
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 6   
+
+ 303   1              for(contador=_VALORES_RPM_N;contador>0;contador--) // Busqueda dentro del array
+ 304   1              {
+ 305   2                      if(memoria[contador-1] < axu) 
+ 306   2                      {
+ 307   3                              axu = memoria[contador-1];
+ 308   3                              min_posicion = contador-1; // Guardamos la posicion del valor buscado
+ 309   3                      }
+ 310   2              }
+ 311   1              return min_posicion; // posicion del valor mínimo
+ 312   1      }
+ 313          
+ 314          /*********************************************************************
+ 315           * @fn void valor_maximo()
+ 316           * @brief               del array memoria devuelve el valor maximo
+ 317           * por pantalla los datos.
+ 318           * @param[in]   void
+ 319           * @return      UNS_16 el promedio
+ 320           * Note: 
+ 321           **********************************************************************/
+ 322           UNS_32 valor_promedio()
+ 323           {
+ 324   1              UNS_8 contador = _VALORES_RPM_N;
+ 325   1              UNS_32 axu = 0;
+ 326   1              while(contador--)
+ 327   1              {
+ 328   2                      axu += memoria[contador]; 
+ 329   2              }
+ 330   1              axu /= _VALORES_RPM_N;
+ 331   1              return axu;
+ 332   1      }
+ 333          
+ 334          /*********************************************************************
+ 335           * @fn void SepararDigitos()
+ 336           * @brief       
+ 337           * por pantalla los datos.
+ 338           * @param[in]   UNS_16 dato a separar
+ 339           * @return      
+ 340           * Note: Agregar
+ 341           **********************************************************************/ 
+ 342          void Separar_Digitos(UNS_32 dato)
+ 343          {
+ 344   1              UNS_8 indice = 4;
+ 345   1              UNS_32 periodo = dato;
+ 346   1              Digito[6] = (periodo%10)+48;
+ 347   1              periodo /= 10;
+ 348   1              while(indice)                           //Separamos el numero en digitos
+ 349   1              {
+ 350   2                      Digito[indice--] = (periodo%10)+48;
+ 351   2                      periodo /= 10;
+ 352   2              }
+ 353   1              Digito[indice] = periodo + 48;          //Guardamos el ultimo digito a mano
+ 354   1      }
+ 355          /* --------------------------------- End Of File ------------------------------ */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1285    ----
+   CONSTANT SIZE    =      7    ----
+   XDATA SIZE       =    211      42
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.03   MAIN                                                                  12/07/2014 19:07:43 PAGE 7   
+
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

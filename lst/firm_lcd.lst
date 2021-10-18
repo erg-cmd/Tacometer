@@ -1,0 +1,197 @@
+C51 COMPILER V9.03   FIRM_LCD                                                              12/07/2014 19:07:44 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE FIRM_LCD
+OBJECT MODULE PLACED IN .\obj\firm_lcd.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.exe src\firm_lcd.c LARGE ROM(COMPACT) OPTIMIZE(9,SIZE) BROWSE INCDIR(.\inc) DEB
+                    -UG OBJECTEXTEND PRINT(.\lst\firm_lcd.lst) OBJECT(.\obj\firm_lcd.obj)
+
+line level    source
+
+   1          /**
+   2           * @file        : firm_lcd.c
+   3           * @brief       : Inicializacion en 4 bits y funciones de manejo del LCD WH1602B
+   4           * @version     : 2.0 - C8051f020
+   5           * @date        : 24/11/2014 
+   6           * @author      : by_Ra!
+   7            * NOTE: faltaria la implementacion de una funcion que interprete un dato y me 
+   8                  lo imprima en su representacion decimal, hexa, etc.
+   9          ===============================================================================
+  10          */
+  11          #include <C8051F020.H>
+  12          #include "firm_lcd.h"
+  13          
+  14          //debe definirse en el main
+  15          extern volatile UNS16 msTicks;
+  16          
+  17          /*********************************************************************
+  18           * @fn                  : void LCD_Delay ( UNS16 msec )
+  19           * @brief               : Genera un retraso de 0.x milisegundos
+  20           * @param[in]   : UNS16 msec
+  21           * @return              : void
+  22           * Note: Simulando en Keil, tiene una latencia de 4ms - Funciona con 2ms
+  23           **********************************************************************/
+  24          
+  25          void LCD_Delay(UNS16 msec) 
+  26          {
+  27   1              volatile UNS16 done = msTicks + msec;
+  28   1              while (msTicks < done);
+  29   1      }
+  30          
+  31          /*********************************************************************
+  32           * @fn                  : void LCD_WrtNibble ( UNS8 val )
+  33           * @brief               : coloca el nibble bajo en LCD_PIN0, previo de un retardo 3-4ms
+  34           * @param[in]   : UNS8 val
+  35           * @return              : void
+  36           * Note:  ----
+  37           **********************************************************************/
+  38           
+  39          void LCD_WrtNibble(UNS8 nibble) 
+  40          {
+  41   1              UNS8 mask=0;
+  42   1              LCD_Delay(4);//3
+  43   1              mask=(LCD_PORT & ~(0x0F << LCD_PIN0));
+  44   1              LCD_PORT = mask | ((nibble & 0x0F) << LCD_PIN0);
+  45   1      }
+  46                  
+  47          /*********************************************************************
+  48           * @fn                  : void LCD_WrtCmd ( UNS8 val )
+  49           * @brief               : Manda comandos al LCD
+  50           * @param[in]   : UNS8 val
+  51           * @return              : void
+  52           * Note:  Primero la parte Alta y despues la Baja del Nibble
+  53           **********************************************************************/
+  54          
+C51 COMPILER V9.03   FIRM_LCD                                                              12/07/2014 19:07:44 PAGE 2   
+
+  55          void LCD_WrtCmd(UNS8 val)
+  56          {
+  57   1              //Para comandos RS = 0
+  58   1              LCD_WrtNibble(val>>4);
+  59   1              CLEAR_PIN(LCD_PORT,LCD_PINRS);//RS = 0
+  60   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+  61   1      //      LCD_Delay_40ns(5);//retardo 280ns
+  62   1               CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+  63   1              LCD_WrtNibble(val);
+  64   1              
+  65   1              CLEAR_PIN(LCD_PORT,LCD_PINRS);//RS = 0
+  66   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+  67   1      //      LCD_Delay_40ns(5);//retardo 280ns
+  68   1               CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+  69   1              
+  70   1      }
+  71          
+  72          /*********************************************************************
+  73           * @fn                  : void LCD_WrtData ( UNS8 caracter )
+  74           * @brief               : Escribe un caracter en el display
+  75           * @param[in]   : UNS8 caracter
+  76           * @return              : void
+  77           * Note:  Primero la parte Alta y despues la Baja del Nibble
+  78           **********************************************************************/
+  79          
+  80          void LCD_WrtData(UNS8 caracter)
+  81          {
+  82   1              //Para escribir caracteres en display RS = 1
+  83   1              LCD_WrtNibble(caracter>>4);
+  84   1              SET_PIN(LCD_PORT,LCD_PINRS);//RS = 1
+  85   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+  86   1      //      LCD_Delay_40ns(5);//retardo 280ns
+  87   1              CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+  88   1              LCD_WrtNibble(caracter);
+  89   1              SET_PIN(LCD_PORT,LCD_PINRS);//RS = 1
+  90   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+  91   1      //      LCD_Delay_40ns(5);//retardo 280ns
+  92   1              CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+  93   1      }
+  94          
+  95          /*********************************************************************
+  96           * @fn                  : void LCD_WrtString ( char* string )
+  97           * @brief               : Imprime un string de UNS8, fin de cadena NULL
+  98           * @param[in]   : UNS8* string
+  99           * @return              : void
+ 100           * Note:  ----
+ 101           **********************************************************************/
+ 102          
+ 103          void LCD_WrtString(char* string)
+ 104          {
+ 105   1              LCD_Delay(4);//5
+ 106   1              while(*string)
+ 107   1              {
+ 108   2                      LCD_WrtData(*string++);
+ 109   2              }
+ 110   1      }
+ 111          
+ 112          /*********************************************************************
+ 113           * @fn                  : void LDC_GoToXY ( UNS8 x, UNS8 y )
+ 114           * @brief               : setea el cursor en la posicion x,y del LCD; X(0,1); Y(0,15)
+ 115           * @param[in]   : x posicion de fila(0,1) ; y posicion de columna (0,15)
+ 116           * @return              : void
+C51 COMPILER V9.03   FIRM_LCD                                                              12/07/2014 19:07:44 PAGE 3   
+
+ 117           * Note: 
+ 118           **********************************************************************/
+ 119          
+ 120          void LCD_GoToXY ( UNS8 x, UNS8 y ) 
+ 121          {
+ 122   1          if ( y==0 )
+ 123   1          //  LCD_WrtCmd((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+ 124   1                      LCD_WrtCmd(0x80 + x);
+ 125   1          else /* y==1 */
+ 126   1              //LCD_WrtCmd((1<<LCD_DDRAM)+LCD_START_LINE2+x);
+ 127   1                      LCD_WrtCmd(0xC0 + x);
+ 128   1      }
+ 129          
+ 130          /*********************************************************************
+ 131           * @fn                  : void LCD_Init ( void )
+ 132           * @brief               : Inicializacion y config-
+ 133           * -guracion particular
+ 134           * @param[in]   : void                  
+ 135           * @return              : void
+ 136           * Note: CONFIGURAR SALIDA EN LA INICIALIZACION DE LOS PUERTOS
+ 137           **********************************************************************/
+ 138          
+ 139          void LCD_Init(void) 
+ 140          {
+ 141   1              // set all pins to output
+ 142   1              CLEAR_PIN(LCD_PORT,(LCD_PINRS|LCD_PINE)); // E = 0 y RS = 0
+ 143   1              LCD_Delay(2);
+ 144   1              LCD_WrtCmd(LCD_FUNCTION_SET_4BIT);//0x38 para 8bits y 28 para 4bits
+ 145   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+ 146   1      //      LCD_Delay_40ns(5);//retardo 280ns
+ 147   1              CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+ 148   1              LCD_Delay(2);
+ 149   1              LCD_WrtCmd(LCD_DISP_ON_CUR_OFF);
+ 150   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+ 151   1      //      LCD_Delay_40ns(5);//retardo 280ns
+ 152   1              CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+ 153   1              LCD_Delay(2);
+ 154   1              LCD_WrtCmd(LCD_DISPLAY_CLEAR);
+ 155   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+ 156   1      //      LCD_Delay_40ns(5);//retardo 280ns
+ 157   1              CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+ 158   1              LCD_Delay(2);
+ 159   1              LCD_WrtCmd(LCD_INC_CURSOR);
+ 160   1              SET_PIN(LCD_PORT,LCD_PINE);     // E = 1
+ 161   1      //      LCD_Delay_40ns(5);//retardo 280ns
+ 162   1              CLEAR_PIN(LCD_PORT,LCD_PINE);// E = 0
+ 163   1              LCD_Delay(2);
+ 164   1              //LCD_WrtCmd(LCD_DISPLAY_ON);   // Hace visible el cursor y parpadea    
+ 165   1      }
+ 166          
+ 167          /* --------------------------------- End Of File ------------------------------ */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    257    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.03   FIRM_LCD                                                              12/07/2014 19:07:44 PAGE 4   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

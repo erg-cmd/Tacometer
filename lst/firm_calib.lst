@@ -1,0 +1,106 @@
+C51 COMPILER V9.03   FIRM_CALIB                                                            12/07/2014 19:07:45 PAGE 1   
+
+
+C51 COMPILER V9.03, COMPILATION OF MODULE FIRM_CALIB
+OBJECT MODULE PLACED IN .\obj\firm_calib.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.exe src\firm_calib.c LARGE ROM(COMPACT) OPTIMIZE(9,SIZE) BROWSE INCDIR(.\inc) D
+                    -EBUG OBJECTEXTEND PRINT(.\lst\firm_calib.lst) OBJECT(.\obj\firm_calib.obj)
+
+line level    source
+
+   1          /**
+   2           * @file        : firm_calib.c
+   3           * @brief       : funciones para aproximar curvas a lineales
+   4           * @version     : 2.0
+   5           * @date        : 24/11/201405.12.2014 16:57:31
+   6           * @author      : by_Ra!
+   7          ===============================================================================
+   8          */
+   9          
+  10          #include "firm_calib.h"
+  11          #include "firm_lcd.h"
+  12          #include "barrido_teclado.h"
+  13          
+  14          const int magnitud[] = {_CORRECCION_0_1,_CORRECCION_1_2,_CORRECCION_2_3,_CORRECCION_3_4,_CORRECCION_4_5,_C
+             -ORRECCION_5_6,_CORRECCION_6_7,_CORRECCION_7_8,_CORRECCION_8_9,_CORRECCION_9_10,
+  15                                                          _CORRECCION_10_11,_CORRECCION_11_12,_CORRECCION_12_13,_CORRECCION_13_14,_CORRECCION_14_15,_CORRECCIO
+             -N_15_16,_CORRECCION_16_17,_CORRECCION_17_18,_CORRECCION_18_19,_CORRECCION_19_20,
+  16                                                          _CORRECCION_20_21,_CORRECCION_21_22,_CORRECCION_22_23,_CORRECCION_23_24,_CORRECCION_24_25,_CORRECCIO
+             -N_25_26,_CORRECCION_26_27,_CORRECCION_27_28,_CORRECCION_28_29};
+  17          
+  18          
+  19          
+  20          /*********************************************************************
+  21           * @fn void
+  22           * @brief       entras con X y salis con Y en la recta de linealidad
+  23           * @param[in]   void
+  24           * @return              void
+  25           * Note:                
+  26           **********************************************************************/
+  27           int Ajuste_RPM(UNS_16 rpm)
+  28           {
+  29   1              UNS_16 posicion = 0, aux = 0;
+  30   1              posicion = rpm;
+  31   1              if(posicion <_RANGO_RPM15)
+  32   1              {
+  33   2                      if(posicion < _RANGO_RPM7)
+  34   2                      {
+  35   3                              if((posicion > _RANGO_RPM0) && (posicion < _RANGO_RPM1)) aux = magnitud[0];//EL VALOR a restar
+  36   3                              if((posicion > _RANGO_RPM1) && (posicion < _RANGO_RPM2)) aux = magnitud[1]; //EL VALOR a restar
+  37   3                              if((posicion > _RANGO_RPM2) && (posicion < _RANGO_RPM3)) aux = magnitud[2]; //EL VALOR a restar
+  38   3                              if((posicion > _RANGO_RPM3) && (posicion < _RANGO_RPM4)) aux = magnitud[3];//EL VALOR a restar
+  39   3                              if((posicion > _RANGO_RPM4) && (posicion < _RANGO_RPM5)) aux = magnitud[4];//EL VALOR a restar
+  40   3                              if((posicion > _RANGO_RPM5) && (posicion < _RANGO_RPM6)) aux = magnitud[5];//EL VALOR a restar
+  41   3                              if((posicion > _RANGO_RPM6) && (posicion < _RANGO_RPM7)) aux = magnitud[6];//EL VALOR a restar
+  42   3                      }else
+  43   2                      {
+  44   3                              if((posicion > _RANGO_RPM7) && (posicion < _RANGO_RPM8)) aux = magnitud[7];//EL VALOR a restar
+  45   3                              if((posicion > _RANGO_RPM8) && (posicion < _RANGO_RPM9)) aux = magnitud[8];//EL VALOR a restar
+  46   3                              if((posicion > _RANGO_RPM9) && (posicion < _RANGO_RPM10))  aux = magnitud[9];//EL VALOR a restar
+  47   3                              if((posicion > _RANGO_RPM10) && (posicion < _RANGO_RPM11)) aux = magnitud[10];//EL VALOR a restar
+  48   3                              if((posicion > _RANGO_RPM11) && (posicion < _RANGO_RPM12)) aux = magnitud[11];//EL VALOR a restar
+  49   3                              if((posicion > _RANGO_RPM12) && (posicion < _RANGO_RPM13)) aux = magnitud[12];//EL VALOR a restar
+  50   3                              if((posicion > _RANGO_RPM13) && (posicion < _RANGO_RPM14)) aux = magnitud[13];//EL VALOR a restar
+  51   3                              if((posicion > _RANGO_RPM14) && (posicion < _RANGO_RPM15)) aux = magnitud[14];//EL VALOR a restar
+C51 COMPILER V9.03   FIRM_CALIB                                                            12/07/2014 19:07:45 PAGE 2   
+
+  52   3                      }
+  53   2              }else
+  54   1              {
+  55   2                      if(posicion < _RANGO_RPM23)
+  56   2                      {
+  57   3                              if((posicion > _RANGO_RPM15) && (posicion < _RANGO_RPM16)) aux = magnitud[15];//EL VALOR a restar
+  58   3                              if((posicion > _RANGO_RPM16) && (posicion < _RANGO_RPM17)) aux = magnitud[16];
+  59   3                              if((posicion > _RANGO_RPM17) && (posicion < _RANGO_RPM18)) aux = magnitud[17];
+  60   3                              if((posicion > _RANGO_RPM18) && (posicion < _RANGO_RPM19)) aux = magnitud[18];
+  61   3                              if((posicion > _RANGO_RPM19) && (posicion < _RANGO_RPM20)) aux = magnitud[19];
+  62   3                              if((posicion > _RANGO_RPM20) && (posicion < _RANGO_RPM21)) aux = magnitud[20];
+  63   3                              if((posicion > _RANGO_RPM21) && (posicion < _RANGO_RPM22)) aux = magnitud[21];
+  64   3                              if((posicion > _RANGO_RPM22) && (posicion < _RANGO_RPM23)) aux = magnitud[22];
+  65   3                      }else
+  66   2                      {
+  67   3                              if((posicion > _RANGO_RPM23) && (posicion < _RANGO_RPM24)) aux = magnitud[23];//EL VALOR a restar
+  68   3                              if((posicion > _RANGO_RPM24) && (posicion < _RANGO_RPM25)) aux = magnitud[24];//EL VALOR a restar
+  69   3                              if((posicion > _RANGO_RPM25) && (posicion < _RANGO_RPM26)) aux = magnitud[25];//EL VALOR a restar
+  70   3                              if((posicion > _RANGO_RPM26) && (posicion < _RANGO_RPM27)) aux = magnitud[26];//EL VALOR a restar
+  71   3                              if((posicion > _RANGO_RPM27) && (posicion < _RANGO_RPM28)) aux = magnitud[27];//EL VALOR a restar
+  72   3                              if((posicion > _RANGO_RPM28) && (posicion < _RANGO_RPM29)) aux = magnitud[28];//EL VALOR a restar
+  73   3                      }
+  74   2              }
+  75   1              return aux;
+  76   1       }
+  77           
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    765    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     58    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

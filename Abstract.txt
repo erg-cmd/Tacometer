@@ -1,0 +1,21 @@
+Resumen:Se pretende hacer un tacometro contando pulsos de una fuente externa y 
+promediar la cantidad de pulsos recibidos en un intervalo de tiempo definido.
+Informar por un Display 16x2 la cantidad de RPM actuales. Se creara una tabla para
+corregir errores de medición contrastados con un Tacometro "PATRON". Los valores seran 
+ingresados por un teclado 4x3.
+
+El rango minimo es de 10RPM entonces 1vuelta en 6 segundos, por lo que si no se obtiene una
+medicion dentro de los 6seg esta fuera del rango.
+
+El rango maximo es de 20000RPM entonces 1 vuelta en 3ms.
+
+Se utiliza el T1 para el rango de 1000 rpm - 20000rpm (tick = 1us)
+Se utiliza el T2 para el rango de 10rpm - 1000rpm (tick = 1ms)
+
+Nota:
+4
+Placa:	BaseBoard_INFO2		uC: C8051F020
+
+Estado: Programacion
+
+Autor:	Elias G.	Fecha: 26/ 04 / 2014
